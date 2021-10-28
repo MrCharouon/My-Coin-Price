@@ -121,7 +121,7 @@ def start(update: Update, context: CallbackContext) -> None:
 
 
     menu_keyboard = [["Top Coins 🔝", "Help ❗️"]]
-    menu_markup = ReplyKeyboardMarkup(menu_keyboard, one_time_keyboard=True, resize_keyboard=True)
+    menu_markup = ReplyKeyboardMarkup(menu_keyboard, one_time_keyboard=False, resize_keyboard=True)
 
     update.message.reply_markdown_v2(
         fr'Hi {user.mention_markdown_v2()} \! Welcome to "My Coin Price" bot', reply_markup=menu_markup)
