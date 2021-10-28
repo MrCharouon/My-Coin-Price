@@ -1,1 +1,5 @@
-
+pycoingecko
+python-telegram-bot
+persiantools
+DateTime
+pytz

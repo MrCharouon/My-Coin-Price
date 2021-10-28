@@ -8,4 +8,14 @@ This robot gives you the latest price of Cryptocurrency please started [@MyCoinP
 
 
 
+
+### Requirements
+
+
+install requirements using the following command:
+
+
+sudo python3 -m pip install -r requirements.txt
+
+
 #License GPL3
