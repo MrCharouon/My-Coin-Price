@@ -12,7 +12,7 @@ This robot gives you the latest price of Cryptocurrency please started [@MyCoinP
 ### Requirements
 
 
-install requirements using the following command:
+install requirements using the following command :
 
 
 ```bash
