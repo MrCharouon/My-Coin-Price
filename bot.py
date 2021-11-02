@@ -11,6 +11,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from telegram import  Update
 from persiantools.jdatetime import JalaliDate
 
+import requests
+import json
 
 
 
@@ -72,7 +74,9 @@ def time():
 
     now_yearUS = nyc_datetimeUS.year
     now_monthUS = nyc_datetimeUS.month
+    now_monthUS = ("{:02d}".format(now_monthUS))
     now_dayUS = nyc_datetimeUS.day
+    now_dayUS = ("{:02d}".format(now_dayUS))
     now_hourUS = nyc_datetimeUS.hour
     now_hourUS = ("{:02d}".format(now_hourUS))
     now_minuteUS = nyc_datetimeUS.minute
@@ -88,7 +92,9 @@ def time():
 
     now_yearIR = nyc_datetimeIR.year
     now_monthIR = nyc_datetimeIR.month
+    # now_monthIR = ("{:02d}".format(str(now_monthIR)))
     now_dayIR = nyc_datetimeIR.day
+    # now_dayIR = ("{:02d}".format((now_dayIR)))
     now_hourIR = nyc_datetimeIR.time().hour
     now_hourIR = ("{:02d}".format(now_hourIR))
     now_minuteIR = nyc_datetimeIR.time().minute
@@ -108,6 +114,129 @@ def time():
 
     return ftime
 
+
+def marketstatus():
+
+    ### THE FIRST SOLUTION ###
+
+    # cg = CoinGeckoAPI()
+    # data_list = cg.get_coins_markets(vs_currency='usd')
+
+    # a_variable = 0
+    # sum_mc = 0
+    # for i in data_list:
+    #     a_variable = i['market_cap']
+    #     sum_mc+=a_variable
+    # sum_final_mc =  sum_mc
+
+    # c_variable = 0
+    # sum_tv = 0
+    # for j in data_list:
+    #     c_variable = j['total_volume']
+    #     sum_tv+=c_variable
+    # sum_final_tv = sum_tv
+
+    # mkt_cap=(("$" + '{0:000,}'.format(sum_final_mc)))
+    # total_volume = ("$" + '{0:000,}'.format(sum_final_tv))
+
+    # print(f'Market Cap: {mkt_cap}  \n24h Vol: {total_volume}')
+
+
+
+
+    cg = CoinGeckoAPI()
+    mccp = cg.get_global()
+
+    state = ''
+    mccp_S= float(mccp['market_cap_change_percentage_24h_usd'])
+    if (mccp_S < 1 and mccp_S > 0):
+        state = "💛"
+    elif (mccp_S > -1 and mccp_S < 0):
+        state = "🧡"
+    elif (mccp_S > 1):
+        state = "💚"
+    elif (mccp_S < -1):
+        state = "❤️"
+
+    mccp = "("+'{0:0,.2f}'.format(mccp['market_cap_change_percentage_24h_usd']) + "%)"
+
+    coins = cg.get_coins_list()
+    exchanges = cg.get_exchanges_id_name_list()
+    coins=len(coins)
+    coins = ('{0:000,}'.format(coins))
+    exchanges=len(exchanges)
+
+
+    response = requests.get('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false')
+    response = response.json()
+
+
+    BTC_Cap = 0
+    ETH_Cap = 0
+    alt_Cap_0 = 0
+    alt_Cap_1 = 0
+
+    a_Variable = 0
+    b_Variable = 0
+    c_Variable = 0
+    d_Variable = 0
+
+    for x in response:
+
+    #     a_Variable = x["total_volume"]
+    #     b_Variable+=a_Variable
+
+        c_Variable = x["market_cap"]
+        d_Variable+=c_Variable
+
+
+        if x['id'] == "bitcoin":
+            BTC_Cap = x['market_cap']
+            alt_Cap_0 = alt_Cap_0 + x['market_cap']
+        else:
+            alt_Cap_0 = alt_Cap_0 + x['market_cap']
+
+        if x['id'] == "ethereum":
+            ETH_Cap = x['market_cap']
+            alt_Cap_1 = alt_Cap_1 + x['market_cap']
+        else:
+            alt_Cap_1 = alt_Cap_1 + x['market_cap']
+
+
+    Dom_BTC = (((BTC_Cap/alt_Cap_0)*100))
+    Dom_BTC = "{:.2f}".format(Dom_BTC)
+
+    Dom_ETH = (((ETH_Cap/alt_Cap_1)*100))
+    Dom_ETH = "{:.2f}".format(Dom_ETH)
+
+    # total_volume = ("$" + '{0:000,}'.format(b_Variable))
+    mkt_cap=(("$" + '{0:000,}'.format(d_Variable)))
+
+
+
+
+
+
+
+    response_total_volume = requests.get('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=15&page=1&sparkline=false')
+    response_total_volume = response_total_volume.json()
+
+    z_Variable = 0
+    f_Variable = 0
+
+    for y in response_total_volume:
+
+        z_Variable = y['total_volume']
+        f_Variable+=z_Variable
+
+    total_volume_f_variable = ('$' + '{0:000,}'.format(f_Variable))
+
+
+    ms = (f'Market Cap: {mkt_cap} {mccp} {state}\n\n24h Vol: {total_volume_f_variable}\n\nDominance: BTC {Dom_BTC} ETH {Dom_ETH}\n\nCoins: {coins} Exchanges: {exchanges}')
+    return ms
+
+
+
 # Enable logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -117,17 +246,15 @@ logger = logging.getLogger(__name__)
 
 
 def start(update: Update, context: CallbackContext) -> None:
-    user = update.effective_user
 
-
-    menu_keyboard = [["Top Coins 🔝", "Help ❗️"]]
+    menu_keyboard = [["Top Coins 🔝", "Market 📌" ,  "Help ❗️" ]]
     menu_markup = ReplyKeyboardMarkup(menu_keyboard, one_time_keyboard=False, resize_keyboard=True)
 
-    update.message.reply_markdown_v2(
-        fr'Hi {user.mention_markdown_v2()} \! Welcome to "My Coin Price" bot', reply_markup=menu_markup)
-
-
+    user = update.effective_user
     idu = update.effective_chat.id
+
+    update.message.reply_markdown_v2(
+    fr'Hi {user.mention_markdown_v2()} \! Welcome to "My Coin Price" bot', reply_markup=menu_markup)
 
     def ex_id(id):
         result = False
@@ -143,25 +270,31 @@ def start(update: Update, context: CallbackContext) -> None:
         f.write("{}\n".format(idu))
         f.close
 
-
-
 def help_command(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Click to get started /Start')
 
 
 def trunk_command(update: Update, context: CallbackContext) -> None:
 
+    menu_keyboard = [["Top Coins 🔝", "Market 📌" ,  "Help ❗️" ]]
+    menu_markup = ReplyKeyboardMarkup(menu_keyboard, one_time_keyboard=False, resize_keyboard=True)
 
     if (update.message.text == "Top Coins 🔝"):
 
         oscillation = topcoins(20)
         ftime = time()
+        update.message.reply_markdown_v2(f'```\ {oscillation} \n\n{ftime}```\n\n@MyCoinPriceBot', reply_markup=menu_markup)
 
-        update.message.reply_markdown_v2(f'```\ {oscillation} \n\n{ftime}```\n\n@MyCoinPriceBot')
 
+    elif(update.message.text == "Market 📌"):
+
+        market_status = marketstatus()
+        ftime = time()
+        update.message.reply_text(f'\n {market_status}\n\n{ftime}\n\n@MyCoinPriceBot', parse_mode= 'Markdown', reply_markup=menu_markup)
 
     elif(update.message.text == "Help ❗️"):
-        update.message.reply_text('Click to get started /Start')
+
+        update.message.reply_text('Click to get started /Start', reply_markup=menu_markup)
 
 
 def test_command(update: Update, context: CallbackContext) -> None:
